@@ -23,8 +23,8 @@ def loginSEI(navegador: webdriver.Firefox, login, senha,nomeCoordenacao):
     usuario = navegador.find_element(By.XPATH, value='//*[@id="txtUsuario"]')
     usuario.send_keys(login)
 
-    senha = navegador.find_element(By.XPATH, value='//*[@id="pwdSenha"]')
-    senha.send_keys(senha)
+    campoSenha = navegador.find_element(By.XPATH, value='//*[@id="pwdSenha"]')
+    campoSenha.send_keys(senha)
 
     exercicio = Select(navegador.find_element(By.XPATH, value='//*[@id="selOrgao"]'))
     exercicio.select_by_visible_text('SEFAZ')
@@ -43,9 +43,7 @@ def loginSEI(navegador: webdriver.Firefox, login, senha,nomeCoordenacao):
     
 def trocarCoordenacao(navegador: webdriver.Firefox, nomeCoordenacao):
     coordenacao = navegador.find_elements(By.XPATH, "//a[@id = 'lnkInfraUnidade']")[1]
-    print(coordenacao)
     if coordenacao.get_attribute("innerHTML") != nomeCoordenacao:
-        print(coordenacao)
         coordenacao.click()
         WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH, "//div[contains(text(), 'Trocar Unidade')]")))
         navegador.find_element(By.XPATH, "//td[text() = '"+nomeCoordenacao+"' ]").click() 
@@ -60,11 +58,136 @@ def abrirPastas(navegador: webdriver.Firefox):
         doc.click() 
         WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH, "//*[text() = 'Aguarde...']")))
         WebDriverWait(navegador,5).until(EC.invisibility_of_element((By.XPATH, "//*[text() = 'Aguarde...']")))
-    
-    navegador.switch_to.default_content()
-    
+        
 def pesquisarProcesso(navegador: webdriver.Firefox, processoSEI):
 
     barraPesquisa = navegador.find_element(By.ID, "txtPesquisaRapida")
     barraPesquisa.send_keys(processoSEI)
     barraPesquisa.send_keys(Keys.ENTER)
+    
+    WebDriverWait(navegador,10).until(EC.presence_of_element_located((By.ID, "ifrArvore")))    
+
+    
+def procurarArquivos(navegador: webdriver.Firefox, listaArquivos):
+    listaArquivos = transformarElementoEmLista(listaArquivos)
+
+
+    lista = []
+    navegador.switch_to.default_content()
+
+    arvore = WebDriverWait(navegador,10).until(EC.presence_of_element_located((By.ID, "ifrArvore")))    
+    navegador.switch_to.frame(arvore)
+    abrirPastas(navegador)
+
+    docs = navegador.find_elements(By.XPATH, "//div[@id = 'divArvore']//div//a[@class = 'infraArvoreNo']")
+    quantDocs = len(docs)
+    
+    
+    for doc in (range(quantDocs)):
+        docTexto = docs[doc].text
+        if any(arquivo.upper() in docTexto.upper() for arquivo in listaArquivos):   
+            lista.append(docs[doc])
+                  
+    return lista      
+    
+def baixarArquivos(navegador: webdriver.Firefox, listaArquivos):
+    
+    listaArquivos = transformarElementoEmLista(listaArquivos)
+
+    navegador.switch_to.default_content()
+    
+    arvore = WebDriverWait(navegador,10).until(EC.presence_of_element_located((By.ID, "ifrArvore")))    
+    navegador.switch_to.frame(arvore)
+    
+    abrirPastas(navegador)
+
+    listaDocs =  WebDriverWait(navegador,10).until(EC.presence_of_element_located((By.ID, "divArvore")))  
+    docs = listaDocs.find_elements(By.TAG_NAME, "a")
+    
+    for doc in docs:
+        if any(arquivo.upper() in doc.text.upper() for arquivo in listaArquivos):
+            doc.click()
+            
+
+def transformarElementoEmLista(listaArquivos):
+    if isinstance(listaArquivos,str):
+        arquivo = listaArquivos
+        listaArquivos = []
+        listaArquivos.append(arquivo)
+        return listaArquivos
+    else:
+        return listaArquivos
+    
+def acessarBloco(navegador, blocoSolicitado):
+    navegador.find_element(By.XPATH, "//span[text() = 'Blocos']").click()
+    WebDriverWait(navegador,20).until(EC.element_to_be_clickable((By.XPATH, "//span[text() = 'Internos']"))).click()
+    blocos = navegador.find_elements(By.XPATH, "//tbody//tr")[1:-1]
+
+    for bloco in blocos:    
+        nBloco = bloco.find_elements(By.XPATH,".//td")[1]
+        if nBloco.text == blocoSolicitado:
+            nBloco.find_element(By.XPATH, './/a').click()
+            break
+        
+def obterProcessosDeBloco(navegador,blocoSolicitado):
+    navegador.find_element(By.XPATH, "//span[text() = 'Blocos']").click()
+    WebDriverWait(navegador,20).until(EC.element_to_be_clickable((By.XPATH, "//span[text() = 'Internos']"))).click()
+    blocos = navegador.find_elements(By.XPATH, "//tbody//tr")[1:-1]
+
+    for bloco in blocos:    
+        nBloco = bloco.find_elements(By.XPATH,".//td")[1]
+        if nBloco.text == blocoSolicitado:
+            nBloco.find_element(By.XPATH, './/a').click()
+            break
+  
+    processos = navegador.find_elements(By.XPATH, "//tbody//tr")
+    return processos
+  
+def escreverAnotacao(navegador,texto,processo):
+    processos = navegador.find_elements(By.XPATH, "//tbody//tr")
+    for processo in processos:
+        if processo in processo.text:
+            processo.find_element(By.XPATH,".//td//a//img[@title='Anotações']").click()
+            break                       
+    try:
+        WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.XPATH,navegador.find_element(By.TAG_NAME, 'iframe'))))
+
+        txtarea = navegador.find_element(By.XPATH, '//textarea[@id = "txtAnotacao"]')
+
+        txtarea.send_keys(Keys.PAGE_DOWN)
+        txtarea.send_keys(Keys.END)
+        for paragrafo in texto:
+            txtarea.send_keys(Keys.ENTER)
+            txtarea.send_keys(paragrafo)
+        time.sleep(1)
+        salvar = navegador.find_element(By.XPATH, '//button[@value = "Salvar"]')
+        salvar.click()
+        
+    except:
+       traceback.print_exc()
+       time.sleep(1)
+       navegador.find_element(By.XPATH, "//div[@class = 'sparkling-modal-close']").click()
+    finally:
+        navegador.switch_to.default_content()
+        
+def buscarInformacaoEmDocumento(navegador,documento, informacoes, verificador = None):
+    navegador.switch_to.default_content()
+    WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
+    
+    documento.click()
+    navegador.switch_to.default_content()            
+    WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrVisualizacao")))
+    WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvoreHtml")))
+
+    if verificador == None:
+        time.sleep(3)
+    else:
+        WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH, "//*[text() = '" + verificador +"']")))
+    
+    body = navegador.find_element(By.XPATH, '//body').text
+    lista = []
+    for item in informacoes:
+        lista.append(re.search(item,body))
+        
+    navegador.switch_to.default_content()
+    return lista
