@@ -7,14 +7,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import  Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
 import re
-from openpyxl import load_workbook
-from datetime import date
-from glob import glob
-from shutil import move
-import tabula
-from PyPDF2 import PdfReader
+
 
 def loginSEI(navegador: webdriver.Firefox, login, senha,nomeCoordenacao):
     
@@ -52,9 +46,9 @@ def abrirPastas(navegador: webdriver.Firefox):
     navegador.switch_to.default_content()
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
     listaDocs = WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.ID, "divArvore")))
-    pastas = listaDocs.find_elements(By.XPATH, '//a[contains(@id, "joinPASTA")]')
+    pastas = listaDocs.find_elements(By.XPATH, '//a[contains(@id, "joinPASTA")]//img[contains(@title, "Abrir")]')
     
-    for doc in pastas[:-1]:
+    for doc in pastas:
         doc.click() 
         WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH, "//*[text() = 'Aguarde...']")))
         WebDriverWait(navegador,5).until(EC.invisibility_of_element((By.XPATH, "//*[text() = 'Aguarde...']")))
@@ -87,7 +81,9 @@ def procurarArquivos(navegador: webdriver.Firefox, listaArquivos):
         docTexto = docs[doc].text
         if any(arquivo.upper() in docTexto.upper() for arquivo in listaArquivos):   
             lista.append(docs[doc])
-                  
+    
+    navegador.switch_to.default_content()
+                
     return lista      
     
 def baixarArquivos(navegador: webdriver.Firefox, listaArquivos):
@@ -120,7 +116,7 @@ def transformarElementoEmLista(listaArquivos):
     
 def acessarBloco(navegador, blocoSolicitado):
     navegador.find_element(By.XPATH, "//span[text() = 'Blocos']").click()
-    WebDriverWait(navegador,20).until(EC.element_to_be_clickable((By.XPATH, "//span[text() = 'Internos']"))).click()
+    WebDriverWait(navegador,10).until(EC.element_to_be_clickable((By.XPATH, "//span[text() = 'Internos']"))).click()
     blocos = navegador.find_elements(By.XPATH, "//tbody//tr")[1:-1]
 
     for bloco in blocos:    
@@ -131,7 +127,7 @@ def acessarBloco(navegador, blocoSolicitado):
         
 def obterProcessosDeBloco(navegador,blocoSolicitado):
     navegador.find_element(By.XPATH, "//span[text() = 'Blocos']").click()
-    WebDriverWait(navegador,20).until(EC.element_to_be_clickable((By.XPATH, "//span[text() = 'Internos']"))).click()
+    WebDriverWait(navegador,10).until(EC.element_to_be_clickable((By.XPATH, "//span[text() = 'Internos']"))).click()
     blocos = navegador.find_elements(By.XPATH, "//tbody//tr")[1:-1]
 
     for bloco in blocos:    
@@ -143,14 +139,14 @@ def obterProcessosDeBloco(navegador,blocoSolicitado):
     processos = navegador.find_elements(By.XPATH, "//tbody//tr")
     return processos
   
-def escreverAnotacao(navegador,texto,processo):
+def escreverAnotacao(navegador,texto,nProcesso):
     processos = navegador.find_elements(By.XPATH, "//tbody//tr")
     for processo in processos:
-        if processo in processo.text:
+        if nProcesso in processo.text:
             processo.find_element(By.XPATH,".//td//a//img[@title='Anotações']").click()
             break                       
     try:
-        WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.XPATH,navegador.find_element(By.TAG_NAME, 'iframe'))))
+        WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, 'iframe')))
 
         txtarea = navegador.find_element(By.XPATH, '//textarea[@id = "txtAnotacao"]')
 
@@ -170,7 +166,8 @@ def escreverAnotacao(navegador,texto,processo):
     finally:
         navegador.switch_to.default_content()
         
-def buscarInformacaoEmDocumento(navegador,documento, informacoes, verificador = None):
+def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None):
+    
     navegador.switch_to.default_content()
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
     
@@ -180,14 +177,25 @@ def buscarInformacaoEmDocumento(navegador,documento, informacoes, verificador = 
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvoreHtml")))
 
     if verificador == None:
-        time.sleep(3)
+        time.sleep(1)
     else:
-        WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH, "//*[text() = '" + verificador +"']")))
+        try:
+            WebDriverWait(navegador,2).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '" + verificador + "')]")))
+        except:
+            print("VERIFICADOR NÃO ENCONTRADO")
+            return None
     
     body = navegador.find_element(By.XPATH, '//body').text
-    lista = []
-    for item in informacoes:
-        lista.append(re.search(item,body))
-        
+    
+    if isinstance(regex,list):
+        resultado = []
+        for item in regex:
+            resultado.append(re.search(item,body))
+    if isinstance(regex,str):
+        resultado = re.search(regex,body)
+    
+    
     navegador.switch_to.default_content()
-    return lista
+
+    return resultado
+
