@@ -5,14 +5,14 @@ from openpyxl.styles import PatternFill
 from openpyxl.formatting.rule import CellIsRule
 
 
-def salvarPlanilha(df, caminho, bloco):
+def salvarPlanilha(df, caminho, sheet):
     #SALVA A TABELA SEM APAGAR AS OUTRAS
     writer = pd.ExcelWriter(caminho, engine='openpyxl', mode='a', if_sheet_exists='replace')
-    df.to_excel(writer, sheet_name=bloco, index=False)
+    df.to_excel(writer, sheet_name=sheet, index=False)
     writer.close()
 
     planilha = load_workbook(caminho)
-    tabela = planilha[bloco]
+    tabela = planilha[sheet]
 
     #FORMULA PARA PREENCHER A COLUNA DE PRAZO
     for linha in range(2,tabela.max_row + 1):

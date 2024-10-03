@@ -123,7 +123,9 @@ def acessarBloco(navegador, blocoSolicitado):
         nBloco = bloco.find_elements(By.XPATH,".//td")[1]
         if nBloco.text == blocoSolicitado:
             nBloco.find_element(By.XPATH, './/a').click()
-            break
+            break     
+    else:
+        raise Exception("Bloco não encontrado")
         
 def obterProcessosDeBloco(navegador,blocoSolicitado):
     navegador.find_element(By.XPATH, "//span[text() = 'Blocos']").click()
@@ -135,6 +137,8 @@ def obterProcessosDeBloco(navegador,blocoSolicitado):
         if nBloco.text == blocoSolicitado:
             nBloco.find_element(By.XPATH, './/a').click()
             break
+    else:
+        raise Exception("Bloco não encontrado")
   
     processos = navegador.find_elements(By.XPATH, "//tbody//tr")
     return processos
