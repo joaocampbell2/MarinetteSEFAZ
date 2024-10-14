@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = 'MarinetteSEFAZ',
-    version = '1.0.16',
+    version = '1.0.17',
     author = 'Joao Campbell',
     author_email = 'joao.pedro.campbell@fazenda.rj.gov.br',
     packages = ['marinetteSEFAZ'],
@@ -25,4 +25,3 @@ setup(
         'Topic :: Scientific/Engineering :: Physics'
     ]
 )
-

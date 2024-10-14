@@ -7,6 +7,7 @@ from selenium.webdriver.common.keys import  Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import re
+from selenium.common.exceptions import TimeoutException
 
 
 def loginSEI(navegador: webdriver.Firefox, login, senha,nomeCoordenacao):
@@ -27,7 +28,7 @@ def loginSEI(navegador: webdriver.Firefox, login, senha,nomeCoordenacao):
 
     navegador.maximize_window()
     
-    WebDriverWait(navegador,5).until(EC.presence_of_element_located, ((By.XPATH, "//div[text() = 'Controle de Processos']")))
+    WebDriverWait(navegador,8).until(EC.presence_of_element_located, ((By.XPATH, "//div[text() = 'Controle de Processos']")))
     
     navegador.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE) 
     
@@ -170,7 +171,7 @@ def escreverAnotacao(navegador,texto,nProcesso):
         navegador.switch_to.default_content()
         WebDriverWait(navegador,3).until(EC.invisibility_of_element_located(((By.XPATH, "//div[@class = 'sparkling-modal-overlay']"))))
 
-def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None):
+def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None,show=False):
     
     navegador.switch_to.default_content()
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
@@ -184,12 +185,14 @@ def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None):
         time.sleep(0.5)
     else:
         try:
-            WebDriverWait(navegador,2).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '" + verificador + "')]")))
+            WebDriverWait(navegador,3).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '" + verificador + "')]")))
         except:
-            print("VERIFICADOR NÃO ENCONTRADO")
             return None
     
-    body = navegador.find_element(By.XPATH, '//body').text
+    body = navegador.find_element(By.XPATH, '//body').text    
+    
+    if show:
+        print(body)
     
     if isinstance(regex,list):
         resultado = []
@@ -205,14 +208,25 @@ def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None):
 
     return resultado
 
-def incluirProcessoEmBloco(navegador,bloco):
+def incluirProcessoEmBloco(navegador,processo,bloco):
+    navegador.switch_to.default_content()
+    WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
+    navegador.find_element(By.XPATH, "//span[text() = '"+processo+"']").click()
     navegador.switch_to.default_content()
     WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrVisualizacao")))
-    navegador.find_element(By.XPATH, "//img[@alt = 'Incluir em Bloco']").click()
+    WebDriverWait(navegador,5).until(EC.element_to_be_clickable((By.XPATH, "//img[@alt = 'Incluir em Bloco']"))).click()
     navegador.switch_to.default_content()
     WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.XPATH, "//iframe[@name = 'modal-frame']")))
     WebDriverWait(navegador,5).until(EC.element_to_be_clickable((By.XPATH, "//a[text() = '"+bloco+"']"))).click()
-    navegador.switch_to.default_content()
+    navegador.switch_to.default_content()  
+    try:
+        WebDriverWait(navegador,2).until(EC.alert_is_present())
+        navegador.switch_to.alert.accept()
+        raise Exception("Processo já incluso no bloco")
+    except TimeoutException:
+        print("Processo adicionado no bloco " + bloco)
+    except:
+        raise
     
     
 def removerProcessoDoBloco(navegador:  webdriver.Firefox,nProcesso):
@@ -222,6 +236,14 @@ def removerProcessoDoBloco(navegador:  webdriver.Firefox,nProcesso):
             processo.find_element(By.XPATH,".//td//a//img[@title='Retirar Processo/Documento do Bloco']").click()
             break 
         
-    WebDriverWait(navegador,5).until(EC.alert_is_present)
+    WebDriverWait(navegador,5).until(EC.alert_is_present())
     navegador.switch_to.alert.accept()
     navegador.switch_to.default_content()
+    print("Processo removido do bloco")
+
+def buscarNumeroProcessoEmBloco(navegador,n):
+    WebDriverWait(navegador,20).until(EC.invisibility_of_element_located(((By.XPATH, "//div[@class = 'sparkling-modal-close']"))))
+    WebDriverWait(navegador,20).until(EC.presence_of_element_located(((By.XPATH, "//tbody//tr"))))
+    processo = navegador.find_elements(By.XPATH, "//tbody//tr")[n]
+    nProcesso = processo.find_element(By.XPATH, './/td[3]//a').text
+    return nProcesso
