@@ -241,9 +241,43 @@ def removerProcessoDoBloco(navegador:  webdriver.Firefox,nProcesso):
     navegador.switch_to.default_content()
     print("Processo removido do bloco")
 
-def buscarNumeroProcessoEmBloco(navegador,n):
+def buscarProcessoEmBloco(navegador,n):
     WebDriverWait(navegador,20).until(EC.invisibility_of_element_located(((By.XPATH, "//div[@class = 'sparkling-modal-close']"))))
     WebDriverWait(navegador,20).until(EC.presence_of_element_located(((By.XPATH, "//tbody//tr"))))
     processo = navegador.find_elements(By.XPATH, "//tbody//tr")[n]
-    nProcesso = processo.find_element(By.XPATH, './/td[3]//a').text
+    nProcesso = processo.find_element(By.XPATH, './/td[3]//a')
     return nProcesso
+
+def incluirDocumento(navegador: webdriver.Firefox,tipoDocumento,textoInicial=None,modelo=None,acesso = "Restrito", hipotese= "Controle Interno (Art. 26, § 3º, da Lei nº 10.180/2001)"):
+    navegador.switch_to.default_content()
+    WebDriverWait(navegador,5).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrVisualizacao")))
+    WebDriverWait(navegador,5).until(EC.element_to_be_clickable((By.XPATH, "//img[@alt = 'Incluir Documento']"))).click()
+    WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH,"//label[text() = 'Escolha o Tipo do Documento: ']")))
+    navegador.find_element(By.XPATH,'//a[text() = "' + tipoDocumento +'"]').click()
+    
+    inicial = {"Documento Modelo": "ProtocoloDocumentoTextoBase", "Texto Padrão": "TextoPadrao", "Nenhum" : None, None : None}
+    textoInicial = inicial.get(textoInicial,textoInicial)
+    
+    
+    WebDriverWait(navegador, 5).until(EC.element_to_be_clickable((By.ID, "divOptProtocoloDocumentoTextoBase")))
+
+    
+    if textoInicial:
+        navegador.find_element(By.XPATH, "//label[@for = 'opt" + textoInicial + "']").click()
+        input = WebDriverWait(navegador,5).until(EC.presence_of_element_located((By.XPATH,"//input[@id= 'txt" + textoInicial + "']")))
+        input.send_keys(modelo)
+        time.sleep(1)
+        input.send_keys(Keys.ENTER)
+    
+    
+    controleAcesso = {"Sigiloso" : "optSigiloso", "Restrito" : "optRestrito", "Público": "optPublico"}
+    
+    acesso = controleAcesso.get(acesso,acesso)
+    
+    navegador.find_element(By.XPATH,'//label[@for ="' + acesso + '"]').click()
+    if acesso != "optPublico":
+        hipoteses = Select(navegador.find_element(By.ID, 'selHipoteseLegal'))
+        hipoteses.select_by_visible_text(hipotese)
+    
+    
+    navegador.find_element(By.XPATH, "//button[@name = 'btnSalvar']").click()
