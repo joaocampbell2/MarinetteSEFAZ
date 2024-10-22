@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = 'MarinetteSEFAZ',
-    version = '1.0.19',
+    version = '1.0.20',
     author = 'Joao Campbell',
     author_email = 'joao.pedro.campbell@fazenda.rj.gov.br',
     packages = ['marinetteSEFAZ'],

@@ -281,3 +281,13 @@ def incluirDocumento(navegador: webdriver.Firefox,tipoDocumento,textoInicial=Non
     
     
     navegador.find_element(By.XPATH, "//button[@name = 'btnSalvar']").click()
+    
+    
+    
+def inserirHyperlinkSEI(nav:  webdriver.Firefox,nDocumento):
+    nav.switch_to.default_content()
+    nav.find_element(By.XPATH, "//a[@id = 'cke_178']").click()
+    nav.find_element(By.XPATH, "//input[@class = 'cke_dialog_ui_input_text']").send_keys(nDocumento)
+    nav.find_element(By.XPATH, "//a[@class = 'cke_dialog_ui_button cke_dialog_ui_button_ok']").click()
+    
+    #FAZER TRATAMENTO DE ERROS
