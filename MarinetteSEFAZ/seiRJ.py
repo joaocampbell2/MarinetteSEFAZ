@@ -291,3 +291,27 @@ def inserirHyperlinkSEI(nav:  webdriver.Firefox,nDocumento):
     nav.find_element(By.XPATH, "//a[@class = 'cke_dialog_ui_button cke_dialog_ui_button_ok']").click()
     
     #FAZER TRATAMENTO DE ERROS
+    
+    
+def limparAnotacao(nav:  webdriver.Firefox,nProcesso):
+    processos = nav.find_elements(By.XPATH, "//tbody//tr")
+    for processo in processos:
+        if nProcesso in processo.text:
+            processo.find_element(By.XPATH,".//td//a//img[@title='Anotações']").click()
+            break                       
+    try:
+        WebDriverWait(nav,5).until(EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, 'iframe')))
+
+        txtarea = nav.find_element(By.XPATH, '//textarea[@id = "txtAnotacao"]')
+        txtarea.send_keys(Keys.CONTROL + "a")
+        txtarea.send_keys(Keys.BACKSPACE)
+
+
+        
+    except:
+       traceback.print_exc()
+       time.sleep(1)
+       nav.find_element(By.XPATH, "//div[@class = 'sparkling-modal-close']").click()
+    finally:
+        nav.switch_to.default_content()
+        WebDriverWait(nav,3).until(EC.invisibility_of_element_located(((By.XPATH, "//div[@class = 'sparkling-modal-overlay']"))))
