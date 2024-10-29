@@ -159,13 +159,11 @@ def escreverAnotacao(navegador,texto,nProcesso):
         for paragrafo in texto:
             txtarea.send_keys(Keys.ENTER)
             txtarea.send_keys(paragrafo)
-        time.sleep(1)
         salvar = navegador.find_element(By.XPATH, '//button[@value = "Salvar"]')
         salvar.click()
         
     except:
        traceback.print_exc()
-       time.sleep(1)
        navegador.find_element(By.XPATH, "//div[@class = 'sparkling-modal-close']").click()
     finally:
         navegador.switch_to.default_content()
@@ -182,10 +180,10 @@ def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None,s
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvoreHtml")))
 
     if verificador == None:
-        time.sleep(0.5)
+        time.sleep(1)
     else:
         try:
-            WebDriverWait(navegador,3).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '" + verificador + "')]")))
+            WebDriverWait(navegador,2).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '" + verificador + "')]")))
         except:
             return None
     
@@ -306,11 +304,11 @@ def limparAnotacao(nav:  webdriver.Firefox,nProcesso):
         txtarea.send_keys(Keys.CONTROL + "a")
         txtarea.send_keys(Keys.BACKSPACE)
 
-
+        salvar = nav.find_element(By.XPATH, '//button[@value = "Salvar"]')
+        salvar.click()
         
     except:
        traceback.print_exc()
-       time.sleep(1)
        nav.find_element(By.XPATH, "//div[@class = 'sparkling-modal-close']").click()
     finally:
         nav.switch_to.default_content()

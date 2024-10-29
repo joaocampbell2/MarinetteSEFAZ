@@ -60,3 +60,8 @@ def salvarPlanilha(df, caminho, sheet):
 
     planilha.save(caminho)
     planilha.close()
+    
+    
+def copiarPlanilha(caminhoOrigem,caminhoDestino):
+    planilha = load_workbook(caminhoOrigem)
+    planilha.save(caminhoDestino)  
