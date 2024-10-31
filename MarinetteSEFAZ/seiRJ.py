@@ -313,3 +313,43 @@ def limparAnotacao(nav:  webdriver.Firefox,nProcesso):
     finally:
         nav.switch_to.default_content()
         WebDriverWait(nav,3).until(EC.invisibility_of_element_located(((By.XPATH, "//div[@class = 'sparkling-modal-overlay']"))))
+        
+def escreverAcompanhamentoEspecial(nav: webdriver.Firefox,processo, texto,grupoAcompanhamento):
+
+    nav.switch_to.default_content()
+    WebDriverWait(nav,5).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
+    nav.find_element(By.XPATH, "//span[text() = '"+processo+"']").click()
+    nav.switch_to.default_content()
+    WebDriverWait(nav,5).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrVisualizacao")))
+    
+    WebDriverWait(nav,5).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Processo aberto')]")))
+    nav.find_element(By.XPATH, "//img[@title = 'Acompanhamento Especial']").click()
+
+    try:
+        WebDriverWait(nav,2).until(EC.presence_of_element_located((By.XPATH, '//img[@alt ="Alterar Acompanhamento"]'))).click()
+    except:
+        try:
+            WebDriverWait(nav,2).until(EC.presence_of_element_located((By.XPATH, '//img[@alt ="Novo Grupo de Acompanhamento"]')))
+        except:
+            raise Exception("Acompanhamento não encontrado")             
+    
+    WebDriverWait(nav,10).until(EC.presence_of_element_located((By.ID, "selGrupoAcompanhamento")))
+    selGrupoAcompanhamento = Select(nav.find_element(By.ID, "selGrupoAcompanhamento"))
+    selGrupoAcompanhamento.select_by_visible_text(grupoAcompanhamento)
+    
+    caixaDeTexto = nav.find_element(By.ID, "txaObservacao")
+    caixaDeTexto.send_keys(Keys.PAGE_DOWN)
+    caixaDeTexto.send_keys(Keys.END)
+
+    textoOriginal = nav.find_element(By.XPATH, "//textarea").text
+    quantidadeCaracteres = sum(len(palavra) + 1 for palavra in texto)
+
+    if len(textoOriginal) + quantidadeCaracteres > 500:
+        raise Exception("Texto cheio!")
+    
+    for info in texto:
+        if info not in textoOriginal:  
+            caixaDeTexto.send_keys("\n" + info + " /")
+    
+    nav.find_element(By.XPATH, "//button[@value = 'Salvar']").click()
+    nav.switch_to.default_content()
