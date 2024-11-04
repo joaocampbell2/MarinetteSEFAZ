@@ -179,11 +179,25 @@ def buscarInformacaoEmDocumento(navegador,documento, regex, verificador = None,s
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrVisualizacao")))
     WebDriverWait(navegador,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvoreHtml")))
 
+
     if verificador == None:
-        time.sleep(1)
+        time.sleep(1)  
+        
     else:
+        if isinstance(verificador, list):
+            condicao = "//*["
+            
+            for item in verificador:
+                condicao += "contains(text(), '" + item + "') or "
+            
+            condicao = condicao[:-4]
+            condicao += "]"    
+        else:
+            condicao = "//*[contains(text(), '" + verificador + "')]"
+        
+        
         try:
-            WebDriverWait(navegador,2).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '" + verificador + "')]")))
+            WebDriverWait(navegador,3).until(EC.presence_of_element_located((By.XPATH, condicao)))
         except:
             return None
     
@@ -342,14 +356,70 @@ def escreverAcompanhamentoEspecial(nav: webdriver.Firefox,processo, texto,grupoA
     caixaDeTexto.send_keys(Keys.END)
 
     textoOriginal = nav.find_element(By.XPATH, "//textarea").text
-    quantidadeCaracteres = sum(len(palavra) + 1 for palavra in texto)
 
-    if len(textoOriginal) + quantidadeCaracteres > 500:
-        raise Exception("Texto cheio!")
-    
     for info in texto:
-        if info not in textoOriginal:  
-            caixaDeTexto.send_keys("\n" + info + " /")
-    
+        if info.upper() not in textoOriginal.upper():  
+            info = "\n" + info + " /"    
+            if len(textoOriginal) + len(info) > 500:
+                raise Exception("Texto cheio!")
+            
+            caixaDeTexto.send_keys(info)
+            print('"'+info + '" adicionada!')
+            textoOriginal += info
     nav.find_element(By.XPATH, "//button[@value = 'Salvar']").click()
     nav.switch_to.default_content()
+    
+    
+def buscarNumeroDocumento(nav: webdriver.Firefox,documento):
+    nav.switch_to.default_content()
+
+    WebDriverWait(nav,20).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrArvore")))
+    abrirPastas(nav)
+
+    docs = nav.find_elements(By.XPATH, "//div[@id = 'divArvore']//div//a[@class = 'infraArvoreNo']")
+        
+    for doc in reversed(docs):
+        texto = doc.text
+        if documento in texto:
+            nav.switch_to.default_content()
+            return  re.search(r"(\d+)\)?$", texto).group(1)
+
+
+
+def incluirEmBlocoDeAssinatura(nav,blocoAssinatura, documento = None):
+    print("Incluindo no novo bloco de assinatura...")
+    nav.switch_to.default_content()
+
+    iframeBotoes = nav.find_element(By.ID, "ifrVisualizacao")
+    nav.switch_to.frame(iframeBotoes)
+
+    arvoreBotoes = nav.find_element(By.ID, "divInfraAreaTela")
+    botoesSei = arvoreBotoes.find_element(By.CLASS_NAME, "barraBotoesSEI")
+    opcoesBotoesSei = botoesSei.find_elements(By.TAG_NAME, "a")
+    for opcaoBotaoSei in opcoesBotoesSei:
+        infoBotao = opcaoBotaoSei.find_element(By.TAG_NAME, "img")
+        attrTitle = infoBotao.get_attribute("title")
+        if attrTitle == "Incluir em Bloco de Assinatura":
+            opcaoBotaoSei.click()
+            break
+
+    WebDriverWait(nav, 20).until(EC.element_to_be_clickable((By.ID, "selBloco")))
+    # Clicar para abrir a aba de blocos
+    nav.find_element(By.ID, "selBloco").click()
+    selecaoBloco = nav.find_element(By.ID, "selBloco")
+    optionsBloco = selecaoBloco.find_elements(By.TAG_NAME, "option")
+   
+
+    for optionBloco in optionsBloco:
+        if optionBloco.text == blocoAssinatura:
+            optionBloco.click()
+            break
+            
+    
+    # Incluir no bloco de assinatura
+    nav.find_element(By.ID, "sbmIncluir").click()
+
+    nav.switch_to.default_content()
+
+    print("Incluido com sucesso.")
+    
