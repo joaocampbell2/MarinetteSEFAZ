@@ -152,7 +152,7 @@ def escreverAnotacao(nav,texto,nProcesso):
     try:
         WebDriverWait(nav,5).until(EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, 'iframe')))
 
-        txtarea = nav.find_element(By.XPATH, '//textarea[@id = "txtAnotacao"]')
+        txtarea = WebDriverWait(nav,10).until(EC.element_to_be_clickable((By.XPATH, '//textarea[@id = "txtAnotacao"]')))
 
         txtarea.send_keys(Keys.PAGE_DOWN)
         txtarea.send_keys(Keys.END)
@@ -456,9 +456,10 @@ def incluirDocumentoExterno(nav: webdriver.Firefox,tipoDocumento,arquivo,nome= "
     WebDriverWait(nav,5).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "ifrVisualizacao")))
     WebDriverWait(nav,5).until(EC.element_to_be_clickable((By.XPATH, "//img[@alt = 'Incluir Documento']"))).click()
     WebDriverWait(nav,5).until(EC.presence_of_element_located((By.XPATH,"//label[text() = 'Escolha o Tipo do Documento: ']")))
-    nav.find_element(By.XPATH,'//a[text() = "Externo"]').click()
-   
-    WebDriverWait(nav, 5).until(EC.element_to_be_clickable((By.ID, "divOptProtocoloDocumentoTextoBase")))
+    WebDriverWait(nav,5).until(EC.presence_of_element_located((By.XPATH,'//a[text() = " Externo"]'))).click()
+
+       
+    WebDriverWait(nav, 5).until(EC.element_to_be_clickable((By.ID, "divSerieDataElaboracao")))
 
    
     nav.find_element(By.ID, "txtDataElaboracao").send_keys(dataFormatada)
