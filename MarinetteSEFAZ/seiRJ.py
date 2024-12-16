@@ -308,7 +308,7 @@ def incluirDespacho(nav: webdriver.Firefox,tipoDocumento,textoInicial=None,model
     
 def inserirHyperlinkSEI(nav:  webdriver.Firefox,nDocumento):
     nav.switch_to.default_content()
-    nav.find_element(By.XPATH, "//a[@id = 'cke_178']").click()
+    WebDriverWait(nav,5).until(EC.element_to_be_clickable((By.XPATH, "//a[@id = 'cke_178']"))).click()
     nav.find_element(By.XPATH, "//input[@class = 'cke_dialog_ui_input_text']").send_keys(nDocumento)
     nav.find_element(By.XPATH, "//a[@class = 'cke_dialog_ui_button cke_dialog_ui_button_ok']").click()
     
@@ -392,13 +392,11 @@ def buscarNumeroDocumento(nav: webdriver.Firefox,documento,lista=False):
     if lista:
         lista = []
         for doc in reversed(docs):
-            try:
-                texto = doc.text
-            except:
-                pass
+            texto = doc.text
             if documento in texto:
-                nav.switch_to.default_content()
                 lista.append(re.search(r"(\d+)\)?$", texto).group(1)  )  
+        
+        nav.switch_to.default_content()
         return lista
       
     for doc in reversed(docs):
@@ -477,7 +475,7 @@ def incluirDocumentoExterno(nav: webdriver.Firefox,tipoDocumento,arquivo,nome= "
         hipoteses.select_by_visible_text(hipotese)
     
     nav.find_element(By.XPATH, "//input[@id = 'filArquivo']").send_keys(arquivo)
-    
+    time.sleep(1)
     
     nav.find_element(By.XPATH, "//button[@name = 'btnSalvar']").click()
     nav.switch_to.default_content()
